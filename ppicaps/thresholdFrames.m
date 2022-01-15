@@ -15,12 +15,13 @@ function [PPIframes, thresholdedIx, task4frames] = thresholdFrames(thisSubject, 
 % ----------------------
 
 % SPM's seed name
-VOI_Name    = ['VOI_' seed '_1'];
+% VOI_Name    = ['VOI_' seed '_1'];
+VOI_Name    = [ seed '_roi'];
 
 % Folder where analysis files were stored
 b           = initialize_vars(thisSubject);
 analyze_dir = [b.dataDir 'analysis/'];
-
+analyze_dir= 'D:\data\211214_additionalPilots\fmri\2nd_level\model_cond_1s_cond';
 % Total number of frames
 nFrames     = 179;
 
@@ -44,7 +45,7 @@ clear VOI_Name VOI VOIxyzMNI
 
 % Average the seed signal from all voxels
 meanSeedSignal = averageSignal(deconvData, VOIxyzMat);
-
+mean(spm_get_data(SPM.xY.P, caudate_ROI_idx),2)
 % ----------------------
 % Create task timecourse
 % ----------------------

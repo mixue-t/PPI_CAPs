@@ -8,9 +8,12 @@ function deconvData = deconvolveSubj(subj)
 
 % Load SPM
 %--------------------------------------------------------------------------
-analyze_dir = [subj.dataDir 'GLM_SciFun/'];
+% analyze_dir = [subj.dataDir 'GLM_SciFun/'];
+analyze_dir= 'D:\data\211214_additionalPilots\fmri\2nd_level\model_cond_1s_cond';
 SPM = spm_select('FPListRec',analyze_dir,'SPM.mat$'); load(SPM);
-tempVOI = load([subj.dataDir '/VOI_PCC_1.mat']);
+% tempVOI = load([subj.dataDir '/VOI_PCC_1.mat']);
+tempVOI = load([analyze_dir '/caudate_roi.mat']);
+
 xY = tempVOI.xY;
 VI =  SPM.xY.VY;
 
