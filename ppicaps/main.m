@@ -41,10 +41,14 @@ supraFrames=[];subjInfo=[];timeInfo=[];taskInfo=[]; seedSignLabels=[];
 for i=1:length(sujets)
     
     % Load subject's variables, paths, etc
-    thisSubject = initialize_vars(sujets{i}, 'control');
-    
+    pilot_name = 'AP';
+    thisSubject = initialize_vars(1, pilot_name);
+%         thisSubject = initialize_vars(sujets{i}, 'control');
+
     % Select suprathresholdFrames
-    [PPIframes, suprathresholdFramesIx, correspondingTask4Frames] = thresholdFrames(thisSubject, 'PCC', 60);
+    [PPIframes, suprathresholdFramesIx, correspondingTask4Frames] = thresholdFrames(1, pilot_name, 'PCC', 60);
+        [labels] = thresholdFrames(1, pilot_name, 'PCC', 60);
+
     load([thisSubject.dataDir thisSubject.curSubj '.mat']); % loads PPIframes, suprathresholdFramesIx and correspondingTask4Frames for each subject
     
     supraFrames      = [supraFrames, PPIframes']; % suprathreshold frames from each subject in the shape #voxels x #frames

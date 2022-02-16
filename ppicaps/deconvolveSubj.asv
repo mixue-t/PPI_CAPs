@@ -73,31 +73,28 @@ P{2}.C = Q;
 %=========================================================================
 tic
 % Iterate over voxels and deconvolve
-counter = 0; percentage = 0;
+total = 153594; counter = 0; percentage = 0;
 x= SPM.xY.VY(1).dim(1);
 y= SPM.xY.VY(1).dim(2);
 z= SPM.xY.VY(1).dim(3);
 t = SPM.nscan(i_sess);
-% total = 153594;
-total = x*y*z;
 % t = SPM.nscan;
 deconvData = zeros(x,y,z,t);
 
 % cd into analyze_dir to be able to calculate beta
 cd(analyze_dir);
-for ix = 1:x
-    disp (['ix: ', int2str(ix)]) 
-    for iy = 1:y
-        disp (['iy: ', int2str(iy)])
-        for iz = 1:z
+for ix = 40:42 
+    ix 
+    for iy = 40:42
+        for iz = 40:42
+             
             thisVoxel = spm_data_read(VI,'xyz',[ix;iy;iz]);
             thisVoxel = spm_filter(SPM.xX.K(i_sess),W*thisVoxel);
             
             % Remove null space of contrast
             beta  = spm_data_read(SPM.Vbeta,'xyz',[ix;iy;iz]);
             if ~isnan(mean(beta)) 
-                SPM.xX.xKXs.X = SPM.xX.xKXs.X(1:N,:);
-                SPM.xX.xKXs.u = SPM.xX.xKXs.u(1:N,:);
+                test = SPM.xX.xKXs.X(1:N,:);
                 thisVoxel = thisVoxel - spm_FcUtil('Y0',SPM.xCon(xY.Ic),SPM.xX.xKXs,beta);
             end
             % Simple deconvolution

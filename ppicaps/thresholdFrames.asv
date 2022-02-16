@@ -8,9 +8,7 @@
 %
 % ------------------------------------------------------
 
-% function [PPIframes, thresholdedIx, task4frames] = thresholdFrames(thisSubject, pilot, seed, percent)
-function [taskLabels] = thresholdFrames(thisSubject, pilot, seed, percent)
-
+function [PPIframes, thresholdedIx, task4frames] = thresholdFrames(thisSubject, pilot, seed, percent)
 % inputs: 
 % thisSubject: 
 % seed (string): name of seed (first letter in Caps)
@@ -33,10 +31,10 @@ analyze_dir = 'D:\data\211214_additionalPilots\fmri\data4analyses\sub-01\FFX\FFX
 nFrames     = 887;
 nScans = nFrames;
 % Load subject's data (deconvData)
-load([b.dataDir b.curSubj '_deconvolvedData']);
+% % load([b.dataDir b.curSubj '_deconvolvedData']);
 
 % Reshape matrix into 2D to facilitate computations
-subjectData2D      = zscore(reshape(deconvData, [], nFrames))';
+% % subjectData2D      = zscore(reshape(deconvData, [], nFrames))';
 
 
 % ----------------------
@@ -51,7 +49,7 @@ VOIxyzMat   = VOIxyzMat(1:3,:); % XYZ indeces of seed's voxels in "MATLAB matrix
 clear VOI_Name VOI VOIxyzMNI
 
 % Average the seed signal from all voxels
-meanSeedSignal = averageSignal(deconvData, VOIxyzMat);
+% % meanSeedSignal = averageSignal(deconvData, VOIxyzMat);
 
 % ----------------------
 % Create task timecourse
@@ -65,26 +63,24 @@ funcFolder = 'D:\data\211214_additionalPilots\fmri\data4analyses\sub-01\func\mod
 onsetList = dir(fullfile(funcFolder, '*_events.tsv'));
 onsetInfo = readtable(fullfile(funcFolder, onsetList(i_sess).name),'FileType','text','Delimiter','\t','TreatAsEmpty',{'N/A','n/a'});
 ind_cond = find(cellfun(@(x) strcmp(x, '4'), string(onsetInfo.trial_type)));
-onset_cond4 = onsetInfo.onset(ind_cond);
-ind_cond = find(cellfun(@(x) strcmp(x, '1'), string(onsetInfo.trial_type)));
-onset_cond1 = onsetInfo.onset(ind_cond);
-% onset_cond4 = [5 22 89 182 288];
+onset_Fun = onsetInfo.onset(ind_cond);
+% onset_Fun = [5 22 89 182 288];
 
 % Duration of blockes. First row: dur_fun; Second row: dur_sci
 % dur_MW    = [13 8 45 52 23; 4 59 48 54 42];
 dur_MW = [repmat(30, 1, 3); repmat(30, 1, 3)];
 
 % Get task labels for all frames
-[~, taskLabels]    = createTaskRegressor(onset_cond4, onset_cond1, dur_MW, TR_MW, nScans);
+[~, taskLabels]    = createTaskRegressor(onset_Fun, dur_MW, TR_MW, nScans);
 
-% Find index of frames to threshold
-[thresholdedIx, ~] = thresholdSeed(meanSeedSignal, nFrames, percent);
-
-% Find suprathreshold frames to keep
-PPIframes     = subjectData2D(thresholdedIx,:);
-
-% Find task labels for suprathreshold frames
-task4frames   = taskLabels(thresholdedIx);
+% % % Find index of frames to threshold
+% % [thresholdedIx, ~] = thresholdSeed(meanSeedSignal, nFrames, percent);
+% % 
+% % % Find suprathreshold frames to keep
+% % PPIframes     = subjectData2D(thresholdedIx,:);
+% % 
+% % % Find task labels for suprathreshold frames
+% % task4frames   = taskLabels(thresholdedIx);
 
 end
 
@@ -116,28 +112,21 @@ meanSignal = mean(signal); % meanSeedSignal = [1 x # nscan]
 end
 
 
-function [taskRegressor, taskLabels] = createTaskRegressor(onset_cond4, onset_cond1, dur_MW, TR_MW, nScans)
+function [taskRegressor, taskLabels] = createTaskRegressor(onset_Fun, dur_MW, TR_MW, nScans)
 
-scanCond4 = ceil((onset_cond4/TR_MW)); % round up (?)
+scanTimeFunOnsets = ceil((onset_Fun/TR_MW)); % round up (?)
 taskRegressor1    = zeros(1,nScans);
 
-scanCond1 = ceil((onset_cond1/TR_MW)); % round up (?)
-taskRegressor2   = zeros(1,nScans);
+thisOnset    = scanTimeFunOnsets(i);
+% thisDuration = round(dur_MW(1,i)/TR_MW);
+thisDuration = 30;
+taskRegressor1(thisOnset:(thisOnset+thisDuration)) = 1;
 
-for i=1:length(scanCond4)
-    thisOnset_4    = scanCond4(i);
-    thisOnset_1    = scanCond1(i);
-%     thisDuration = round(dur_MW(1,i)/TR_MW);
-    thisDuration = ceil(30/TR_MW);
-    taskRegressor1(thisOnset_4:(thisOnset_4+thisDuration-1)) = 1;
-    taskRegressor2(thisOnset_1:(thisOnset_1+thisDuration-1)) = 1;
-end
-
-% % Flip zeros and ones
-% taskRegressor2 = 1 - taskRegressor1; 
+% Flip zeros and ones
+taskRegressor2 = 1 - taskRegressor1; 
 
 % After the 178th scan it's just resting state
-% taskRegressor2([1,2,175:end]) = 0; 
+taskRegressor2([1,2,175:end]) = 0; 
 taskRegressor = taskRegressor1;
 
 taskLabels = taskRegressor;
