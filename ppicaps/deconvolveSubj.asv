@@ -73,29 +73,45 @@ P{2}.C = Q;
 %=========================================================================
 tic
 % Iterate over voxels and deconvolve
-total = 153594; counter = 0; percentage = 0;
+% % counter = 0; percentage = 0;
 x= SPM.xY.VY(1).dim(1);
 y= SPM.xY.VY(1).dim(2);
 z= SPM.xY.VY(1).dim(3);
 t = SPM.nscan(i_sess);
-% t = SPM.nscan;
-deconvData = zeros(x,y,z,t);
+% % total = 153594;
+% total = x*y*z;
+% % t = SPM.nscan;
+% deconvData = zeros(x,y,z,t);
+% deconvData_x = zeros(x);
+% deconvData_y = zeros(y,z,t);
+
 
 % cd into analyze_dir to be able to calculate beta
 cd(analyze_dir);
-for ix = 40:42 
-    ix 
-    for iy = 40:42
-        for iz = 40:42
-             
+SPM.xX.xKXs.X = SPM.xX.xKXs.X(1:N,:);
+SPM.xX.xKXs.u = SPM.xX.xKXs.u(1:N,:);
+SPM_xX_K_sess = SPM.xX.K(i_sess);
+% avoid broadcast variables
+SPM_Vbeta = SPM.Vbeta;
+SPM_xCon_xY_Ic = SPM.xCon(xY.Ic);
+SPM_xX_xKXs = SPM.xX.xKXs;
+
+deconvData = cell(x,1);
+deconvData_y = cell(y,1);
+parfor ix = 1:2
+    disp (['ix: ', int2str(ix)]) 
+    for iy = 1:2
+        
+        disp (['iy: ', int2str(iy)])
+        deconvData_z = zeros(z,t);
+        for iz = 31:40
             thisVoxel = spm_data_read(VI,'xyz',[ix;iy;iz]);
-            thisVoxel = spm_filter(SPM.xX.K(i_sess),W*thisVoxel);
+            thisVoxel = spm_filter(SPM_xX_K_sess,W*thisVoxel);
             
             % Remove null space of contrast
-            beta  = spm_data_read(SPM.Vbeta,'xyz',[ix;iy;iz]);
+            beta  = spm_data_read(SPM_Vbeta,'xyz',[ix;iy;iz]);
             if ~isnan(mean(beta)) 
-                test = SPM.xX.xKXs.X(1:N,:);
-                thisVoxel = thisVoxel - spm_FcUtil('Y0',SPM.xCon(xY.Ic),SPM.xX.xKXs,beta);
+                thisVoxel = thisVoxel - spm_FcUtil('Y0',SPM_xCon_xY_Ic,SPM_xX_xKXs,beta);
             end
             % Simple deconvolution
             % -------------------------------------------------------------
@@ -110,14 +126,18 @@ for ix = 40:42
             % and N = number of scans in the session. Finally account for slice
             % timing effects by shifting the index accordingly.
             %----------------------------------------------------------------------
-            deconvVoxel = downsample(xn,16);  
-            deconvData(ix, iy, iz,:) = deconvVoxel;
+            deconvVoxel = downsample(xn,16); 
+            deconvData_z(iz,:) = deconvVoxel;
+%             deconvData(ix, iy, iz,:) = deconvVoxel;
             
-            counter = counter +1;
-            percentage = (counter / total ) * 100;
-           
+%             counter = counter +1;
+%             percentage = (counter / total ) * 100;
+%            
         end
+        deconvData_y{iy,1} = deconvData_z;
     end
+    
+    deconvData{ix,1} = deconvData_y;
 end
 toc
 

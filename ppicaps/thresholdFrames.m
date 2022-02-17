@@ -36,8 +36,9 @@ nScans = nFrames;
 load([b.dataDir b.curSubj '_deconvolvedData']);
 
 % Reshape matrix into 2D to facilitate computations
-subjectData2D      = zscore(reshape(deconvData, [], nFrames))';
-
+% subjectData2D      = zscore(reshape(deconvData, [], nFrames))';
+% Serafim's edit
+subjectData2D      = zscore(reshape(deconvData, [], nFrames), 0, 2)'; % z-score each voxel across frames/time
 
 % ----------------------
 % Create seed timecourse
