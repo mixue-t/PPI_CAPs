@@ -22,7 +22,17 @@ sujets      = {'Sujet01', 'Sujet10', 'Sujet16', 'Sujet17', 'Sujet19' ...
                'Sujet21', 'Sujet26', 'Sujet27', 'Sujet31', 'Sujet32', ...
                'Sujet09', 'Sujet14', 'Sujet20', 'Sujet23', 'Sujet25' };
 
-ppicapsDir = '<PATH TO SAVE PPI-CAPs>';  
+ppicapsDir = 'D:\data\211214_additionalPilots\fmri\ppi_caps';  
+pilot_name = 'AP';
+mod_name = 'FFX_model_block_30s';
+mod_path = fullfile('FFX', mod_name);
+VOI_name = 'Thalamus';
+% TODO load SPM to get dimensions of initial image
+analyze_dir = 'D:\data\211214_additionalPilots\fmri\data4analyses\sub-01\FFX\FFX_model_block_30s';
+SPM = spm_select('FPListRec',analyze_dir,'SPM.mat$'); load(SPM);
+x_dim = SPM.xVol.DIM(1);
+y_dim = SPM.xVol.DIM(2);
+z_dim = SPM.xVol.DIM(3);
  
 % ------------------------------------------------------
 % Load data for all subjects
@@ -40,12 +50,25 @@ supraFrames=[];subjInfo=[];timeInfo=[];taskInfo=[]; seedSignLabels=[];
 % (taskInfo); 
 for i=1:length(sujets)
     
-    % Load subject's variables, paths, etc
-    thisSubject = initialize_vars(sujets{i}, 'control');
+    
+     % Load subject's variables, paths, etc
+   
+    thisSubject = initialize_vars(i, pilot_name);
+    analyze_dir = fullfile(thisSubject.dataDir, mod_path);
+
     
     % Select suprathresholdFrames
-    [PPIframes, suprathresholdFramesIx, correspondingTask4Frames] = thresholdFrames(thisSubject, 'PCC', 60);
-    load([thisSubject.dataDir thisSubject.curSubj '.mat']); % loads PPIframes, suprathresholdFramesIx and correspondingTask4Frames for each subject
+    [PPIframes, suprathresholdFramesIx, correspondingTask4Frames] = thresholdFrames(i, pilot_name, 'PCC', 60);
+    save(fullfile(analyze_dir, ['PPIframes_sub-' num2str(i, '%02d') '.mat']), 'PPIframes', '-v7.3');
+    save(fullfile(analyze_dir, ['suprathresholdFramesIx_sub-' num2str(i, '%02d') '.mat']), 'suprathresholdFramesIx', '-v7.3');
+    save(fullfile(analyze_dir, ['correspondingTask4Frames-' num2str(i, '%02d') '.mat']), 'correspondingTask4Frames', '-v7.3');
+
+%     load([thisSubject.dataDir thisSubject.curSubj '.mat']); % loads PPIframes, suprathresholdFramesIx and correspondingTask4Frames for each subject
+    
+   load(fullfile(analyze_dir, ['PPIframes_sub-' num2str(i, '%02d') '.mat']));
+    load(fullfile(analyze_dir, ['suprathresholdFramesIx_sub-' num2str(i, '%02d') '.mat']));
+    load(fullfile(analyze_dir, ['correspondingTask4Frames-' num2str(i, '%02d') '.mat']));
+
     
     supraFrames      = [supraFrames, PPIframes']; % suprathreshold frames from each subject in the shape #voxels x #frames
     subjInfo         = [subjInfo, ones(1,size( PPIframes',2))*i]; % subject indeces corresponding to each supraframe
@@ -60,7 +83,7 @@ end
 [voxels, nonVoxels] = findGMvoxels;
 
 % Find matrix rotations for saving nifti files
-[voxel_size, voxel_shift] = prepareToSaveNifti;
+[voxel_size, voxel_shift] = prepareToSaveNifti(analyze_dir, VOI_name);
 
 
 % ------------------------------------------------------
@@ -71,14 +94,15 @@ end
 k = 4;
 
 % Run kmeans++ on 
-[PPI_CAPs, PPI_CAPs_Ix]  = kmeanspp(supraFrames(voxels,:), k, 100); 
-   
+dist = 'cosine';
+[PPI_CAPs, PPI_CAPs_Ix, ~, ~, ~]  = kmeanspp(supraFrames(voxels,:), k, dist, 100); 
+
 for i = 1:k
         CAPix{i}              = find(PPI_CAPs == i); % #frames x 1; index of frames for this CAP
-        CAPl{i}               = PPI_CAPs == i;
+        CAPl{i}               = PPI_CAPs == i;  % boolean mask of frames for this CAP
         scf{i}                = CAPl{i}.* PPI_CAPs_Ix; %signed cluster's frames
         cluster{i}            = supraFrames(:,CAPix{i}); % #voxels x #frames
-        CAPmean{i}               = (sum(supraFrames(:,scf{i}==1),2) - sum(supraFrames(:,scf{i}==2),2))/sum(CAPl{i} );
+        CAPmean{i}               = (sum(supraFrames(:,scf{i}==1),2) - sum(supraFrames(:,scf{i}==2),2))/sum(CAPl{i} ); % whole-brain centroid (average)
         CAPmean{i}(nonVoxels,:)  = 0;
         
         polarityLabelsTmp= scf{i};
@@ -129,13 +153,16 @@ end
 function [inGM, nonGM] = findGMvoxels
 
 mask      = load([pwd '/dependencies/MNIBrainMask.mat']); % Load MNIBrainMask
-nonGM     = find(mask.MNIBrainMask(:) < 1); voxels  = find(mask.MNIBrainMask(:) == 1);
+nonGM     = find(mask.MNIBrainMask(:) < 1); 
+inGM  = find(mask.MNIBrainMask(:) == 1);
 
 end
 
 function [voxel_size, voxel_shift] = prepareToSaveNifti
 
-VOI = load([pwd '/dependencies/VOI_PCC_1.mat']);
+VOI = spm_select('FPListRec',analyze_dir,[VOI_name '_1.mat$']); 
+VOI = load(VOI);
+
 voxel_size = diag(VOI.xY.spec.mat);
 voxel_size = voxel_size(1:end-1)';
 

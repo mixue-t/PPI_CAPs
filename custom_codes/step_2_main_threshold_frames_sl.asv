@@ -27,8 +27,8 @@ z_dim = SPM.xVol.DIM(3);
 
 % Go to subject folder
 addpath(genpath('/home/loukas/spm12/'));
-addpath(genpath('C:\Users\tanm\Documents\stealth_game\analysis_git\PPI_CAPs'));
-mainPath = [ppicapsDir, '/../data4analyses/'];
+addpath(genpath([ppicapsDir, 'scripts/']));
+mainPath = [ppicapsDir, '/../ata4analyses/'];
 cd(mainPath)
 
 S = dir([mainPath '/sub*']);
@@ -41,14 +41,14 @@ subFolders = S(dirFlags);
 %% Create cell with the subject folder names
 n_subjects= size(S,1);
 subject_name= {};
-for k = 1 : n_subjects-1
+for k = 1 : n_subjects
     subject_name{k} = subFolders(k).name;
 end
  
 %% Initialise variables
-seed = 'Thalamus';
+seed = 'Auditory';
 percent = [5, 50, 60]; % desired percentages of percentage of frames to retain
-percent = [50];
+
 %% Load data (if exist) instead of running the loop just below this line
 %load([ppicapsDir '/PPIallInfo_5.mat']);
 
@@ -73,14 +73,13 @@ for perc = 1:length(percent)
     for i = 1:n_subjects
         
         % initialize the paths for the specific/current subject
-        thissubj = initialize_vars(subject_name{i}, 'AP', false);
-
-        disp(thissubj.curSubj)
-        deconvData = deconvolveSubj_parallel(thissubj); % deconvolution has already been performed -- no need to re-run
+        thissubj = initialize_vars(subject_name{i}, ppicapsDir);
         
-        % TODO what is seedSign (output)?
+        disp(thissubj.curSubj)
+        %deconvData = deconvolveSubj(thissubj); % deconvolution has already been performed -- no need to re-run
+        
         % Perform the suprathresholding procedure for this subject and for the desired % of frames to retain
-        [PPIframes, thresholdedIx, task4frames, seedSign] = thresholdFrames(thissubj.curSubj, 'AP', seed, percent(perc));
+        [PPIframes, thresholdedIx, task4frames, seedSign] = thresholdFrames(thissubj, seed, percent(perc));
 
         disp("Estimating the suprathersholded frames for the current subject...");
         
@@ -91,20 +90,17 @@ for perc = 1:length(percent)
         seedSignALL = [seedSignALL seedSign]; % seed signs
         
         % group & subject labels construction
-        groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))];   % PTC
-        subjectLabelALL = [subjectLabelALL ones(1,length(thresholdedIx)) * str2num(thissubj.curSubj(5:6))];
-% 
-%         if thissubj.curSubj(1) == 'T' % FT
-%             groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))*3];
-%             subjectLabelALL = [subjectLabelALL ones(1,length(thresholdedIx)) * str2num(thissubj.curSubj(5:6))];
-%         else
-%             subjectLabelALL = [subjectLabelALL ones(1,length(thresholdedIx)) * str2num(thissubj.curSubj(7:8))];
-%             if thissubj.curSubj(3) == 'C'
-%                 groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))];   % PTC
-%             else
-%                 groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))*2]; % PTM
-%             end
-%         end
+        if thissubj.curSubj(1) == 'T' % FT
+            groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))*3];
+            subjectLabelALL = [subjectLabelALL ones(1,length(thresholdedIx)) * str2num(thissubj.curSubj(2:4))];
+        else
+            subjectLabelALL = [subjectLabelALL ones(1,length(thresholdedIx)) * str2num(thissubj.curSubj(7:8))];
+            if thissubj.curSubj(3) == 'C'
+                groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))];   % PTC
+            else
+                groupLabelALL = [groupLabelALL ones(1,length(thresholdedIx))*2]; % PTM
+            end
+        end
     end
     disp(['Saving results for percentage value:' ' ' num2str(percent(perc))]);
     save([ppicapsDir 'PPIallInfo_' num2str(percent(perc)) '.mat'], 'PPIframesALL', 'thresholdedIxALL', 'task4framesALL', 'seedSignALL', 'groupLabelALL', 'subjectLabelALL', '-v7.3');

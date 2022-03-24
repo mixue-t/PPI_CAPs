@@ -172,12 +172,12 @@ for i = 1:k
         % save using spm because the other way does not work as expected
         header = spm_vol([ppicapsDir '\TemplateGMmask_func.nii']);
 %         header.fname = capNiftiFile;
-%        for k = 1:nFrames
-        header(1).fname =capNiftiFile; % repmat({capNiftiFile},nFrames-1, 1);
-        header(1).descrip = '';
-        header(1).pinfo = [0;0;nFrames];% force re-scaling
-%        end
-        spm_write_vol(header(1), CAP_vol{i});
+       for k = 1:nFrames
+        header(k).fname =capNiftiFile; % repmat({capNiftiFile},nFrames-1, 1);
+        header(k).descrip = '';
+        header(k).pinfo = [0;0;nFrames];% force re-scaling
+       end
+        spm_write_vol(header, CAP_vol{i});
 end
 
 %% -------------------------------------------------------------------------

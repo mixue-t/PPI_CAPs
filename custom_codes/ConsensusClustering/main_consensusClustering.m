@@ -29,17 +29,20 @@ subject_labels = subjectLabelALL';
 % -------------------------------
 highlyActiveVoxelsOnly = 0;
 param.K = 3:8;
-param.cons_n_folds = 10; % number of subsamples for each k
-param.Subsample_fraction = 0.8;
-param.Subsample_type = 'subjects';
+param.cons_n_folds = 5; % number of subsamples for each k
+param.Subsample_fraction = 1.0;
+param.Subsample_type = 'subjects'; %'items' (data points) 'dims'
 param.DistType = 'cosine';
 %outDir = [dataDir 'results/consensusClustering/'];
 outDir = [dataDir 'results/' 'consensusClustering_' case_name '/'];
-param.KmeansMethod = 'kmeanspp'; % kmeansmatlab or kmeanspp
+param.KmeansMethod = 'kmeansmatlab'; % kmeansmatlab or kmeanspp
+scriptsDir = 'C:\Users\tanm\Documents\stealth_game\analysis_git\PPI_CAPs';
 
 %% Mask non-GM voxels
 % -------------------------------
-[voxels, nonVoxels] = ppicaps_util_getMaskedVoxels(dataDir);
+% [voxels, nonVoxels] = ppicaps_util_getMaskedVoxels(dataDir);
+[voxels, nonVoxels] = findGMvoxels(scriptsDir);
+
 consensus_input = X(:, voxels); % frames (all subjects) x only GM voxels
 disp(['The number of GM voxels are: ' num2str(size(voxels,1))])
 
